@@ -1,6 +1,6 @@
 
-data/
-artifacts/
+/data/
+/artifacts/
 *.nii
 *.nii.gz
 *.img
