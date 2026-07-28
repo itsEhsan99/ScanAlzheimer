@@ -1,0 +1,12 @@
+# Normalize line endings: LF in the repository, regardless of platform.
+* text=auto eol=lf
+
+# Binary files must never be touched.
+*.png binary
+*.jpg binary
+*.gif binary
+*.img binary
+*.hdr binary
+*.pth binary
+*.xlsx binary
+*.pdf binary
