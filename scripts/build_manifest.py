@@ -7,6 +7,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+
 from ScanAlzheimer.data.manifest import (
     add_control_eligibility,
     build_manifest,

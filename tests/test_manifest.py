@@ -5,6 +5,7 @@ any data present.
 
 import pandas as pd
 import pytest
+
 from ScanAlzheimer.data.manifest import (
     add_control_eligibility,
     build_manifest,

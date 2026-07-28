@@ -5,6 +5,7 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+
 from ScanAlzheimer.data.paths import IMAGE_VARIANTS, build_image_path, discover_sessions
 
 DATA_ROOT = Path("data/raw")

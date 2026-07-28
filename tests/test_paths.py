@@ -4,6 +4,7 @@ in a temporary folder -- never touches the real dataset.
 
 import pandas as pd
 import pytest
+
 from ScanAlzheimer.data.paths import (
     attach_image_paths,
     build_image_path,

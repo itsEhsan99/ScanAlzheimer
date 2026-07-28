@@ -7,6 +7,7 @@ pipeline actually works on real data.
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+
 from ScanAlzheimer.data.paths import build_image_path, discover_sessions
 from ScanAlzheimer.preprocessing.intensity import preprocess_volume
 from ScanAlzheimer.preprocessing.volume import AXIS_NAMES, extract_slice, load_volume

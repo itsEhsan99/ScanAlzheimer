@@ -5,6 +5,7 @@ All tests use small synthetic arrays -- no real MRI data required.
 
 import numpy as np
 import pytest
+
 from ScanAlzheimer.preprocessing.intensity import (
     clip_percentile,
     normalize_minmax,
