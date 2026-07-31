@@ -8,7 +8,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from ScanAlzheimer.data.paths import build_image_path, discover_sessions
+from ScanAlzheimer.data.paths import discover_sessions, find_image_path
 from ScanAlzheimer.preprocessing.intensity import preprocess_volume
 from ScanAlzheimer.preprocessing.volume import AXIS_NAMES, extract_slice, load_volume
 
@@ -23,12 +23,14 @@ def main() -> None:
         raise SystemExit(f"No OASIS sessions found under {DATA_ROOT}")
 
     stem = sorted(sessions)[0]
-    path = build_image_path(sessions[stem], stem, VARIANT)
+    path = find_image_path(sessions[stem], stem, VARIANT)
+    if path is None:
+        raise SystemExit(f"No {VARIANT} image found for {stem}")
 
     volume = load_volume(path)
-    print(f"Subject:  {stem}")
-    print(f"Variant:  {VARIANT}")
-    print(f"Shape:    {volume.shape}")
+    print(f"Subject:   {stem}")
+    print(f"File:      {path.name}")
+    print(f"Shape:     {volume.shape}")
     print(f"Raw range: [{volume.min():.1f}, {volume.max():.1f}]")
 
     processed = preprocess_volume(volume, scheme="minmax")

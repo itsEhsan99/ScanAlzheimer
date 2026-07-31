@@ -3,31 +3,56 @@
 This module is the only place that knows about OASIS's directory layout.
 Everything downstream consumes the manifest's `image_path` column and stays
 agnostic to how the data happens to be organised on disk.
+
+Filenames encode how many MPRAGE acquisitions were averaged (`mpr_n3`,
+`mpr_n4`, ...), which varies per session, so paths are matched by pattern
+rather than hard-coded. Hard-coding one count silently drops the sessions
+that used another -- and since acquisitions are usually discarded for
+motion, which correlates with dementia, that loss would not be random.
 """
 
 from pathlib import Path
 
 import pandas as pd
 
+# Glob patterns relative to a session directory. `stem` is the session ID,
+# e.g. "OAS1_0001_MR1"; `n*` absorbs the acquisition count.
 IMAGE_VARIANTS: dict[str, str] = {
-    "t88_masked_gfc": "PROCESSED/MPRAGE/T88_111/{stem}_mpr_n4_anon_111_t88_masked_gfc.hdr",
-    "t88_gfc": "PROCESSED/MPRAGE/T88_111/{stem}_mpr_n4_anon_111_t88_gfc.hdr",
-    "subject_native": "PROCESSED/MPRAGE/SUBJ_111/{stem}_mpr_n4_anon_sbj_111.hdr",
-    "fsl_seg": "FSL_SEG/{stem}_mpr_n4_anon_111_t88_masked_gfc_fseg.hdr",
+    # Atlas-registered, gain-field corrected, skull-stripped.
+    "t88_masked_gfc": "PROCESSED/MPRAGE/T88_111/{stem}_mpr_n*_anon_111_t88_masked_gfc.hdr",
+    # Atlas-registered, gain-field corrected, skull intact.
+    "t88_gfc": "PROCESSED/MPRAGE/T88_111/{stem}_mpr_n*_anon_111_t88_gfc.hdr",
+    # Motion-corrected average in the subject's own native space.
+    "subject_native": "PROCESSED/MPRAGE/SUBJ_111/{stem}_mpr_n*_anon_sbj_111.hdr",
+    # FSL tissue segmentation (grey/white/CSF).
+    "fsl_seg": "FSL_SEG/{stem}_mpr_n*_anon_111_t88_masked_gfc_fseg.hdr",
 }
 
 DEFAULT_VARIANT = "t88_masked_gfc"
 
 
-def build_image_path(session_dir: Path, stem: str, variant: str = DEFAULT_VARIANT) -> Path:
-    """Return the expected image path for one session and image variant.
-
-    Does not check whether the file exists -- that is the caller's job, so
-    that missing files can be reported rather than raising mid-pipeline.
-    """
+def image_pattern(stem: str, variant: str = DEFAULT_VARIANT) -> str:
+    """Return the glob pattern for one session and image variant."""
     if variant not in IMAGE_VARIANTS:
         raise ValueError(f"Unknown image variant {variant!r}. Available: {sorted(IMAGE_VARIANTS)}")
-    return session_dir / IMAGE_VARIANTS[variant].format(stem=stem)
+    return IMAGE_VARIANTS[variant].format(stem=stem)
+
+
+def find_image_path(session_dir: Path, stem: str, variant: str = DEFAULT_VARIANT) -> Path | None:
+    """Locate the image file for one session, or None if it is absent.
+
+    Raises if more than one file matches: an ambiguous match means our
+    assumptions about the layout are wrong, and silently picking one would
+    hide that.
+    """
+    pattern = image_pattern(stem, variant)
+    matches = sorted(Path(session_dir).glob(pattern))
+
+    if not matches:
+        return None
+    if len(matches) > 1:
+        raise ValueError(f"Ambiguous match for {stem} / {variant}: {[m.name for m in matches]}")
+    return matches[0]
 
 
 def discover_sessions(data_root: Path) -> dict[str, Path]:
@@ -65,14 +90,10 @@ def attach_image_paths(
 
     for raw_id in manifest["raw_id"]:
         session_dir = sessions.get(raw_id)
-        if session_dir is None:
-            paths.append("")
-            available.append(False)
-            continue
+        image_path = None if session_dir is None else find_image_path(session_dir, raw_id, variant)
 
-        image_path = build_image_path(session_dir, raw_id, variant)
-        paths.append(str(image_path))
-        available.append(image_path.exists())
+        paths.append("" if image_path is None else str(image_path))
+        available.append(image_path is not None)
 
     manifest["image_path"] = paths
     manifest["image_available"] = available

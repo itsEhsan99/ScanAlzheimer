@@ -6,7 +6,7 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-from ScanAlzheimer.data.paths import IMAGE_VARIANTS, build_image_path, discover_sessions
+from ScanAlzheimer.data.paths import IMAGE_VARIANTS, discover_sessions, find_image_path
 
 DATA_ROOT = Path("data/raw")
 
@@ -18,14 +18,14 @@ session_dir = sessions[stem]
 print(f"Inspecting: {stem}\n")
 
 for variant in IMAGE_VARIANTS:
-    path = build_image_path(session_dir, stem, variant)
-    if not path.exists():
-        print(f"{variant:<16} MISSING  ({path.name})")
+    path = find_image_path(session_dir, stem, variant)
+    if path is None:
+        print(f"{variant:<16} MISSING")
         continue
 
     img = nib.load(path)
     data = np.asarray(img.dataobj)
-    print(f"{variant:<16} shape={img.shape}  dtype={data.dtype}")
-    print(f"{'':<16} zooms={img.header.get_zooms()}")
+    print(f"{variant:<16} {path.name}")
+    print(f"{'':<16} shape={img.shape}  dtype={data.dtype}")
     print(f"{'':<16} range=[{data.min()}, {data.max()}]")
     print()
