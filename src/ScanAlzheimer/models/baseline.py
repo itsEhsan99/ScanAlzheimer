@@ -25,6 +25,10 @@ FEATURE_SETS: dict[str, list[str]] = {
     "age_only": AGE_FEATURES,
     "tissue_only": TISSUE_FEATURES,
     "tissue_plus_age": TISSUE_FEATURES + AGE_FEATURES,
+    # Deployed model: brain/CSF ratio is a direct atrophy index, and the
+    # remaining tissue features are collinear with it (r up to 0.97), which
+    # both hurt accuracy and flipped coefficient signs.
+    "atrophy_plus_age": ["brain_csf_ratio"] + AGE_FEATURES,
 }
 
 

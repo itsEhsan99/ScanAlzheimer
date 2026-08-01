@@ -81,3 +81,27 @@ def shuffle_labels(frame: pd.DataFrame, seed: int = 0, label_column: str = "labe
     shuffled = frame.copy()
     shuffled[label_column] = rng.permutation(frame[label_column].to_numpy())
     return shuffled
+
+
+def shuffle_labels_within_folds(
+    frame: pd.DataFrame,
+    seed: int = 0,
+    label_column: str = "label",
+) -> pd.DataFrame:
+    """Permute labels inside each fold, preserving per-fold class balance.
+
+    Shuffling globally breaks the stratification the folds were built with:
+    a test fold enriched in one class leaves its training set depleted, so
+    the model learns the inverse rule and scores systematically *below*
+    chance. Permuting within folds removes that artefact and yields the
+    clean ~0.5 a negative control should show.
+    """
+    rng = np.random.default_rng(seed)
+    shuffled = frame.copy()
+
+    for fold in frame[FOLD_COLUMN].unique():
+        mask = frame[FOLD_COLUMN] == fold
+        values = frame.loc[mask, label_column].to_numpy()
+        shuffled.loc[mask, label_column] = rng.permutation(values)
+
+    return shuffled
